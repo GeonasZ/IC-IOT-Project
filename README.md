@@ -1,0 +1,1 @@
+This is the repository for the project of the course "Internet of Things".
