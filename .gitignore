@@ -2,4 +2,4 @@ PLC-Connection/
 config.json
 __pycache__/
 *.pyc
-.env
+.venv
