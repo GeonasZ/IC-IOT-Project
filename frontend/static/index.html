@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IoT FBox Data</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <header class="mb-10">
+      <h1 class="text-2xl font-bold text-slate-800 tracking-tight">FBox Data Dashboard</h1>
+      <p class="text-slate-500 mt-1">Box IDs, realtime and history data from config and FBox.</p>
+    </header>
+
+    <!-- History range chart: select box + time -->
+    <section class="mb-10">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
+          <h2 class="text-lg font-semibold text-slate-800">History Range Chart</h2>
+          <button type="button" id="btn-select-box" class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition">
+            Select Box
+          </button>
+          <span id="current-box-label" class="text-sm text-slate-500">None</span>
+        </div>
+        <div class="px-5 py-4 flex flex-wrap items-end gap-4 border-b border-slate-100">
+          <label class="flex flex-col gap-1" lang="en">
+            <span class="text-xs font-medium text-slate-500">Start time, local (not before 2026-02-20)</span>
+            <input type="text" id="history-start" class="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white cursor-pointer" readonly placeholder="Select date and time" autocomplete="off" />
+          </label>
+          <label class="flex flex-col gap-1" lang="en">
+            <span class="text-xs font-medium text-slate-500">End time, local</span>
+            <input type="text" id="history-end" class="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white cursor-pointer" readonly placeholder="Select date and time" autocomplete="off" />
+          </label>
+          <button type="button" id="btn-query-history" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+            Query History
+          </button>
+        </div>
+        <div id="chart-history" class="w-full h-80"></div>
+        <!-- Pairwise analysis for current history range -->
+        <div id="analysis-result-range" class="px-5 py-4 border-t border-slate-100 hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Pairwise Analysis</h3>
+              <p id="analysis-count-range" class="text-xs text-slate-500 mt-1"></p>
+            </div>
+            <button type="button" id="btn-range-pair" class="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 transition">
+              Choose variables
+            </button>
+          </div>
+          <div class="space-y-1 text-sm text-slate-700" id="analysis-text-range"></div>
+          <div id="scatter-range" class="w-full h-64 mt-4"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- History Data for 2–16 Mar (fixed range from CSV) -->
+    <section class="mb-10">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100">
+          <h2 class="text-lg font-semibold text-slate-800">History Data for 2nd Mar – 16th Mar</h2>
+        </div>
+        <div id="chart-3-2-3-16" class="w-full h-80"></div>
+        <!-- Pairwise analysis for 2–16 Mar -->
+        <div id="analysis-result-3-2-3-16" class="px-5 py-4 border-t border-slate-100 hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Pairwise Analysis</h3>
+              <p id="analysis-count-3-2-3-16" class="text-xs text-slate-500 mt-1"></p>
+            </div>
+            <button type="button" id="btn-3-2-3-16-pair" class="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-200 transition">
+              Choose variables
+            </button>
+          </div>
+          <div class="space-y-1 text-sm text-slate-700" id="analysis-text-3-2-3-16"></div>
+          <div id="scatter-3-2-3-16" class="w-full h-64 mt-4"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MQTT Live chart -->
+    <section class="mb-10">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
+          <h2 class="text-lg font-semibold text-slate-800">MQTT Live Chart</h2>
+          <button type="button" id="btn-mqtt-start" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition">
+            Start MQTT
+          </button>
+          <button type="button" id="btn-mqtt-stop" class="px-4 py-2 bg-slate-500 text-white text-sm font-medium rounded-lg hover:bg-slate-600 transition hidden">
+            Stop MQTT
+          </button>
+        </div>
+        <div id="chart-mqtt" class="w-full h-80"></div>
+      </div>
+    </section>
+
+
+  <!-- Select box popup -->
+  <div id="box-popup" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 bg-black/50" id="box-popup-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 relative">
+        <h3 class="text-lg font-semibold text-slate-800 mb-3">Select Box</h3>
+        <ul id="box-popup-list" class="space-y-2 max-h-60 overflow-auto"></ul>
+        <button type="button" id="box-popup-close" class="mt-4 w-full py-2 text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pairwise variable selection popup -->
+  <div id="pair-popup" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 bg-black/50" id="pair-popup-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-5 relative">
+        <h3 class="text-lg font-semibold text-slate-800 mb-3">Choose two variables</h3>
+        <p class="text-xs text-slate-500 mb-3">Select X and Y to see their correlation and scatter plot.</p>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">X axis</label>
+            <select id="pair-x" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Y axis</label>
+            <select id="pair-y" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"></select>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-5">
+          <button type="button" id="pair-popup-confirm" class="flex-1 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
+            Apply
+          </button>
+          <button type="button" id="pair-popup-cancel" class="flex-1 py-2 text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    const base = '';
+    const MIN_DATE = '2026-02-20T00:00:00';
+    const STEP_MINUTES = 30;
+
+    function parseFlatpickrValue(s) {
+      if (!s || !String(s).trim()) return null;
+      const t = String(s).trim().replace(' ', 'T');
+      const ms = new Date(t).getTime();
+      return isNaN(ms) ? null : ms;
+    }
+
+    let fpHistoryStart = null;
+    let fpHistoryEnd = null;
+
+    function initHistoryPickers() {
+      if (typeof flatpickr !== 'function') return;
+      const opts = {
+        enableTime: true,
+        time_24hr: true,
+        minuteIncrement: STEP_MINUTES,
+        minDate: MIN_DATE.split('T')[0],
+        dateFormat: 'Y-m-d H:i',
+        allowInput: false
+      };
+      fpHistoryStart = flatpickr('#history-start', opts);
+      fpHistoryEnd = flatpickr('#history-end', opts);
+    }
+
+    let boxIdList = [];
+    let boxIdToGroup = {};
+    let currentBoxId = null;
+    let mqttPollIntervalId = null;
+
+    // Cached history data for analysis
+    let historyDataRange = [];
+    let historyData3216 = [];
+    let labelsRange = [];
+    let labels3216 = [];
+    let selectedPairRange = { x: 0, y: 1 };
+    let selectedPair3216 = { x: 0, y: 1 };
+    let currentPairTarget = null; // 'range' or '3_2_3_16'
+
+    function out(id, text, isError) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = text;
+      el.className = 'p-5 text-sm overflow-auto max-h-48 font-mono ' + (isError ? 'text-red-600 bg-red-50' : 'text-slate-600 bg-slate-50');
+    }
+    async function parseResponse(r) {
+      const type = (r.headers.get('Content-Type') || '').toLowerCase();
+      const text = await r.text();
+      if (type.includes('application/json')) {
+        try { return JSON.parse(text); } catch (_) { return { info: text || 'Invalid JSON' }; }
+      }
+      return { info: text || 'Response not JSON', status: r.status };
+    }
+
+    function setCurrentBox(id) {
+      if (mqttPollIntervalId != null) stopMqtt();
+      currentBoxId = id;
+      const label = document.getElementById('current-box-label');
+      if (label) {
+        if (!id) label.textContent = 'None';
+        else label.textContent = 'Current: ' + id + (boxIdToGroup[id] ? ' - ' + boxIdToGroup[id] : '');
+      }
+    }
+    function openBoxPopup() {
+      if (boxIdList.length <= 1) return;
+      const popup = document.getElementById('box-popup');
+      const listEl = document.getElementById('box-popup-list');
+      if (!popup || !listEl) return;
+      listEl.innerHTML = '';
+      boxIdList.forEach(function (id) {
+        const li = document.createElement('li');
+        li.className = 'py-2 px-3 rounded-lg hover:bg-slate-100 cursor-pointer text-slate-700';
+        li.textContent = id;
+        li.dataset.boxId = id;
+        listEl.appendChild(li);
+      });
+      popup.classList.remove('hidden');
+    }
+    function closeBoxPopup() {
+      document.getElementById('box-popup').classList.add('hidden');
+    }
+    function initBoxListAndPopup() {
+      document.getElementById('box-popup-list').addEventListener('click', function (e) {
+        const id = e.target.dataset.boxId;
+        if (id) { setCurrentBox(id); closeBoxPopup(); }
+      });
+      document.getElementById('box-popup-close').addEventListener('click', closeBoxPopup);
+      document.getElementById('box-popup-backdrop').addEventListener('click', closeBoxPopup);
+      document.getElementById('btn-select-box').addEventListener('click', function () {
+        if (boxIdList.length === 0) {
+          alert('Click "Get box_id" first to load the box list.');
+          return;
+        }
+        if (boxIdList.length === 1) {
+          setCurrentBox(boxIdList[0]);
+          return;
+        }
+        openBoxPopup();
+      });
+    }
+
+    async function loadBoxIdList() {
+      try {
+        const r = await fetch(base + '/api/boxes/list_box_id');
+        const data = await parseResponse(r);
+        const ids = (data && data.box_id) ? (Array.isArray(data.box_id) ? data.box_id : [data.box_id]) : [];
+        boxIdList = ids.filter(Boolean);
+        boxIdToGroup = {};
+        if (data && data.boxes && Array.isArray(data.boxes)) {
+          data.boxes.forEach(function (b) {
+            if (b && b.box_id) boxIdToGroup[b.box_id] = b.group || '';
+          });
+        }
+        const selectBtn = document.getElementById('btn-select-box');
+        if (selectBtn) {
+          if (boxIdList.length <= 1) selectBtn.classList.add('hidden');
+          else selectBtn.classList.remove('hidden');
+        }
+        if (boxIdList.length === 1) setCurrentBox(boxIdList[0]);
+        return boxIdList;
+      } catch (_) { return []; }
+    }
+
+    function clampToStep(t) {
+      const stepMs = STEP_MINUTES * 60 * 1000;
+      return Math.floor(t / stepMs) * stepMs;
+    }
+    function getHistoryRangeInputs() {
+      const startEl = document.getElementById('history-start');
+      const endEl = document.getElementById('history-end');
+      const minMs = new Date(MIN_DATE).getTime();
+      let start = startEl && startEl.value ? parseFlatpickrValue(startEl.value) : null;
+      let end = endEl && endEl.value ? parseFlatpickrValue(endEl.value) : null;
+      if (start !== null && start < minMs) start = minMs;
+      if (end !== null && end < minMs) end = minMs;
+      if (start !== null) start = clampToStep(start);
+      if (end !== null) end = clampToStep(end);
+      return { start, end };
+    }
+    function setHistoryRangeDefaults() {
+      const startEl = document.getElementById('history-start');
+      const endEl = document.getElementById('history-end');
+      if (!startEl || !endEl) return;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const minDate = new Date(MIN_DATE);
+      if (today < minDate) today.setTime(minDate.getTime());
+      const end = new Date(today);
+      end.setHours(23, 30, 0, 0);
+      const start = new Date(today);
+      start.setHours(0, 0, 0, 0);
+      if (!fpHistoryStart || !fpHistoryEnd) return;
+      if (!fpHistoryStart.selectedDates.length) fpHistoryStart.setDate(start, false);
+      if (!fpHistoryEnd.selectedDates.length) fpHistoryEnd.setDate(end, false);
+    }
+
+    async function queryHistoryRange() {
+      if (!currentBoxId) {
+          alert('Please select a box first.');
+        return;
+      }
+      const { start, end } = getHistoryRangeInputs();
+      if (start == null || end == null) {
+        alert('Please set start and end time.');
+        return;
+      }
+      if (start < new Date(MIN_DATE).getTime()) {
+        alert('Start time cannot be before 2026-02-20.');
+        return;
+      }
+      if (end < start) {
+        alert('End time must be after start time.');
+        return;
+      }
+      // start/end are ms timestamps from local selection; backend uses Asia/Shanghai for aggregation; chart displays in local time
+      const body = {
+        box_no: currentBoxId,
+        begin: start,
+        end: end,
+        limit: 2000
+      };
+      chartHistory.setOption({
+        title: { text: 'Querying Data', left: 'center', top: 'center', textStyle: { color: '#64748b', fontSize: 14 } },
+        xAxis: { type: 'time', show: false },
+        yAxis: { type: 'value', show: false },
+        series: []
+      }, true);
+      try {
+        const r = await fetch(base + '/api/boxes/history/chart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await parseResponse(r);
+        if (!r.ok) {
+          alert(data.info || 'Request failed');
+          return;
+        }
+        if (Array.isArray(data) && data.length > 0) {
+          updateHistoryChart(data);
+        } else {
+          updateHistoryChart([]);
+          chartHistory.setOption({ title: { text: 'No data in range', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } } }, true);
+        }
+      } catch (e) {
+        updateHistoryChart([]);
+        chartHistory.setOption({ title: { text: 'No data', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } } }, true);
+        alert('Request failed: ' + e.message);
+      }
+    }
+
+    document.getElementById('btn-query-history').addEventListener('click', function () {
+      queryHistoryRange();
+    });
+
+    function stopMqttPoll() {
+      if (mqttPollIntervalId != null) {
+        clearInterval(mqttPollIntervalId);
+        mqttPollIntervalId = null;
+      }
+      document.getElementById('btn-mqtt-start').classList.remove('hidden');
+      document.getElementById('btn-mqtt-stop').classList.add('hidden');
+    }
+    async function startMqtt() {
+      if (!currentBoxId) {
+        alert('Please select a box first.');
+        return;
+      }
+      const r = await fetch(base + '/api/mqtt/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ box_id: currentBoxId })
+      });
+      const data = await parseResponse(r);
+      if (!r.ok) {
+        alert(data.info || 'MQTT subscribe failed');
+        return;
+      }
+      stopMqttPoll();
+      document.getElementById('btn-mqtt-start').classList.add('hidden');
+      document.getElementById('btn-mqtt-stop').classList.remove('hidden');
+      chartMqtt.setOption({
+        title: { text: 'MQTT Live', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+        xAxis: { type: 'time', show: false },
+        yAxis: { type: 'value', show: false },
+        series: []
+      }, true);
+      function poll() {
+        fetch(base + '/api/mqtt/stream?box_id=' + encodeURIComponent(currentBoxId))
+          .then(function (res) { return res.json(); })
+          .then(function (arr) {
+            if (Array.isArray(arr) && arr.length > 0) {
+              updateMqttChart(arr);
+            } else {
+              fetch(base + '/api/mqtt/stats?box_id=' + encodeURIComponent(currentBoxId))
+                .then(function (r) { return r.json(); })
+                .then(function (st) {
+                  var msg = (st && st.received_count === 0) ? 'No MQTT messages yet - publish to your topic' : 'No data in buffer';
+                  chartMqtt.setOption({
+                    title: { text: msg, left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+                    xAxis: { type: 'time', show: false },
+                    yAxis: { type: 'value', show: false },
+                    series: []
+                  }, true);
+                })
+                .catch(function () {
+                  chartMqtt.setOption({
+                    title: { text: 'No data', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+                    xAxis: { type: 'time', show: false },
+                    yAxis: { type: 'value', show: false },
+                    series: []
+                  }, true);
+                });
+            }
+          })
+          .catch(function () {});
+      }
+      poll();
+      mqttPollIntervalId = setInterval(poll, 2000);
+    }
+    async function stopMqtt() {
+      stopMqttPoll();
+      await fetch(base + '/api/mqtt/unsubscribe', { method: 'POST' });
+      updateMqttChart([]);
+    }
+    document.getElementById('btn-mqtt-start').addEventListener('click', startMqtt);
+    document.getElementById('btn-mqtt-stop').addEventListener('click', stopMqtt);
+
+    async function listBoxId() {
+      try {
+        const r = await fetch(base + '/api/boxes/list_box_id');
+        const data = await parseResponse(r);
+        out('boxes-out', JSON.stringify(data, null, 2), !r.ok);
+        if (r.ok && data && data.box_id) {
+          boxIdList = Array.isArray(data.box_id) ? data.box_id : [data.box_id];
+          boxIdToGroup = {};
+          if (data.boxes && Array.isArray(data.boxes)) {
+            data.boxes.forEach(function (b) {
+              if (b && b.box_id) boxIdToGroup[b.box_id] = b.group || '';
+            });
+          }
+          const selectBtn = document.getElementById('btn-select-box');
+          if (selectBtn) {
+            if (boxIdList.length <= 1) selectBtn.classList.add('hidden');
+            else selectBtn.classList.remove('hidden');
+          }
+          if (boxIdList.length === 1) setCurrentBox(boxIdList[0]);
+        }
+      } catch (e) {
+        out('boxes-out', 'Request failed: ' + e.message, true);
+      }
+    }
+    async function getRealtime() {
+      const body = { box_id: currentBoxId || 'YOUR_BOX_ID', request: [{ name: 'GroupName', points: ['Point1', 'Point2'] }] };
+      try {
+        const r = await fetch(base + '/api/realtime/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await parseResponse(r);
+        out('realtime-out', JSON.stringify(data, null, 2), !r.ok);
+      } catch (e) {
+        out('realtime-out', 'Request failed: ' + e.message, true);
+      }
+    }
+    async function getHistory() {
+      const now = Date.now();
+      const day = 24 * 60 * 60 * 1000;
+      const body = {
+        request: [{ box_id: currentBoxId || 'YOUR_BOX_ID', request: [{ name: 'group', channels: ['channel1'] }] }],
+        begin: now - day, end: now, limit: 100, flatten: true
+      };
+      try {
+        const r = await fetch(base + '/api/history/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await parseResponse(r);
+        out('history-out', JSON.stringify(data, null, 2), !r.ok);
+        if (r.ok && Array.isArray(data) && data.length > 0) updateHistoryChart(data);
+      } catch (e) {
+        out('history-out', 'Request failed: ' + e.message, true);
+      }
+    }
+
+    function buildChartOption(flattenData) {
+      if (!flattenData || !flattenData.length) {
+        return {
+          title: { text: 'No data', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+          xAxis: { type: 'time', show: false },
+          yAxis: { type: 'value', show: false },
+          series: []
+        };
+      }
+      const byName = {};
+      var minT = Infinity;
+      var maxT = -Infinity;
+      flattenData.forEach(function (item) {
+        const n = item.name || 'unknown';
+        var t = item.time;
+        var v = item.value;
+        var numV = (typeof v === 'number' && !isNaN(v)) ? v : Number(v);
+        if (isNaN(numV)) return;
+        if (!byName[n]) byName[n] = [];
+        if (t != null && !isNaN(t)) {
+          if (t < minT) minT = t;
+          if (t > maxT) maxT = t;
+        }
+        byName[n].push([item.time, numV]);
+      });
+      if (minT === Infinity) minT = null;
+      if (maxT === -Infinity) maxT = null;
+      const series = Object.keys(byName).map(function (name) {
+        var legendName = name.indexOf('>') >= 0 ? name.split('>').pop() : (name.indexOf('/') >= 0 ? name.split('/').pop() : name);
+        return { name: legendName, type: 'line', smooth: true, data: byName[name] };
+      });
+      return {
+        tooltip: { trigger: 'axis' },
+        legend: { bottom: 0 },
+        grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+        xAxis: {
+          type: 'time',
+          boundaryGap: false,
+          min: minT != null ? minT : undefined,
+          max: maxT != null ? maxT : undefined
+        },
+        yAxis: { type: 'value', scale: true },
+        dataZoom: [
+          { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true }
+        ],
+        series: series
+      };
+    }
+    const chartHistory = echarts.init(document.getElementById('chart-history'));
+    const chart3_2_3_16 = echarts.init(document.getElementById('chart-3-2-3-16'));
+    const chartMqtt = echarts.init(document.getElementById('chart-mqtt'));
+    let chartScatterRange = null;
+    let chartScatter3216 = null;
+
+    function getShortName(name) {
+      if (!name) return 'unknown';
+      if (name.indexOf('>') >= 0) return name.split('>').pop();
+      if (name.indexOf('/') >= 0) return name.split('/').pop();
+      return name;
+    }
+
+    /** 数值轴刻度经除法易产生 1.7449999999999999 等浮点尾数，压缩有效数字再输出。 */
+    function formatScatterAxisLabel(value) {
+      var v = Number(value);
+      if (!isFinite(v)) return '';
+      return String(+v.toPrecision(12));
+    }
+
+    function extractLabels(flattenData) {
+      const byName = {};
+      flattenData.forEach(function (item) {
+        const n = item.name || 'unknown';
+        const v = item.value;
+        const numV = (typeof v === 'number' && !isNaN(v)) ? v : Number(v);
+        if (isNaN(numV)) return;
+        if (!byName[n]) byName[n] = true;
+      });
+      const names = Object.keys(byName).sort();
+      return {
+        names: names,
+        short: names.map(getShortName)
+      };
+    }
+
+    function computePairStats(flattenData, nameX, nameY) {
+      if (!flattenData || !flattenData.length) return null;
+      const mapX = {};
+      const mapY = {};
+      flattenData.forEach(function (item) {
+        const n = item.name || 'unknown';
+        const t = item.time;
+        const v = item.value;
+        const numV = (typeof v === 'number' && !isNaN(v)) ? v : Number(v);
+        if (isNaN(numV) || t == null || isNaN(t)) return;
+        if (n === nameX) mapX[t] = numV;
+        if (n === nameY) mapY[t] = numV;
+      });
+      const times = Object.keys(mapX)
+        .map(function (t) { return Number(t); })
+        .filter(function (t) { return mapY.hasOwnProperty(t); })
+        .sort(function (a, b) { return a - b; });
+      if (times.length < 2) return null;
+      const xs = [];
+      const ys = [];
+      times.forEach(function (t) {
+        xs.push(mapX[t]);
+        ys.push(mapY[t]);
+      });
+      const n = xs.length;
+      let sumX = 0, sumY = 0;
+      for (let i = 0; i < n; i++) {
+        sumX += xs[i];
+        sumY += ys[i];
+      }
+      const meanX = sumX / n;
+      const meanY = sumY / n;
+      let sxx = 0, syy = 0, sxy = 0;
+      for (let i = 0; i < n; i++) {
+        const dx = xs[i] - meanX;
+        const dy = ys[i] - meanY;
+        sxx += dx * dx;
+        syy += dy * dy;
+        sxy += dx * dy;
+      }
+      const denom = (n - 1);
+      const varX = denom > 0 ? sxx / denom : 0;
+      const varY = denom > 0 ? syy / denom : 0;
+      const cov = denom > 0 ? sxy / denom : 0;
+      const r = (varX > 0 && varY > 0) ? (cov / Math.sqrt(varX * varY)) : 0;
+      const slope = varX > 0 ? (cov / varX) : 0;
+      const intercept = meanY - slope * meanX;
+      return {
+        count: n,
+        xs: xs,
+        ys: ys,
+        meanX: meanX,
+        meanY: meanY,
+        cov: cov,
+        r: r,
+        slope: slope,
+        intercept: intercept
+      };
+    }
+
+    function renderPairAnalysis(target, flattenData, labelsInfo, selectedPair) {
+      if (!labelsInfo || labelsInfo.names.length < 2) return;
+      const names = labelsInfo.names;
+      const shorts = labelsInfo.short;
+      const idxX = Math.max(0, Math.min(selectedPair.x, names.length - 1));
+      let idxY = Math.max(0, Math.min(selectedPair.y, names.length - 1));
+      if (idxY === idxX) {
+        idxY = (idxX + 1) % names.length;
+      }
+      selectedPair.x = idxX;
+      selectedPair.y = idxY;
+      const nameX = names[idxX];
+      const nameY = names[idxY];
+      const shortX = shorts[idxX];
+      const shortY = shorts[idxY];
+      const stats = computePairStats(flattenData, nameX, nameY);
+      const resultId = target === 'range' ? 'analysis-result-range' : 'analysis-result-3-2-3-16';
+      const countId = target === 'range' ? 'analysis-count-range' : 'analysis-count-3-2-3-16';
+      const textId = target === 'range' ? 'analysis-text-range' : 'analysis-text-3-2-3-16';
+      const scatterId = target === 'range' ? 'scatter-range' : 'scatter-3-2-3-16';
+      const resultEl = document.getElementById(resultId);
+      const countEl = document.getElementById(countId);
+      const textEl = document.getElementById(textId);
+      if (!resultEl || !countEl || !textEl) return;
+      if (!stats) {
+        resultEl.classList.remove('hidden');
+        countEl.textContent = 'Not enough overlapping points to compute statistics.';
+        textEl.innerHTML = '<p>Please choose another pair of variables.</p>';
+        const dom = document.getElementById(scatterId);
+        if (dom) {
+          const chart = target === 'range' ? chartScatterRange : chartScatter3216;
+          if (chart) chart.clear();
+        }
+        return;
+      }
+      resultEl.classList.remove('hidden');
+      countEl.textContent = 'Aligned points used: ' + stats.count + ' (X: ' + shortX + ', Y: ' + shortY + ')';
+      textEl.innerHTML = [
+        '<div class="space-y-2.5">',
+        '  <div class="flex flex-wrap gap-x-5 gap-y-1">',
+        '    <span>Pearson <span class="text-slate-500 font-mono">r</span>: <span class="font-mono tabular-nums">' + stats.r.toFixed(4) + '</span></span>',
+        '    <span>Covariance: <span class="font-mono tabular-nums">' + stats.cov.toFixed(4) + '</span></span>',
+        '  </div>',
+        '  <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-t border-slate-100 pt-2.5">',
+        '    <span class="text-slate-500 text-xs shrink-0">Y = a + bX</span>',
+        '    <span>Slope <span class="text-slate-500 font-mono">b</span>: <span class="font-mono tabular-nums">' + stats.slope.toFixed(4) + '</span></span>',
+        '    <span>Intercept <span class="text-slate-500 font-mono">a</span>: <span class="font-mono tabular-nums">' + stats.intercept.toFixed(4) + '</span></span>',
+        '  </div>',
+        '</div>'
+      ].join('');
+      const dom = document.getElementById(scatterId);
+      if (!dom) return;
+      let chart = target === 'range' ? chartScatterRange : chartScatter3216;
+      if (!chart) {
+        chart = echarts.init(dom);
+        if (target === 'range') chartScatterRange = chart; else chartScatter3216 = chart;
+      }
+      const points = stats.xs.map(function (x, i) { return [x, stats.ys[i]]; });
+      let minX = Math.min.apply(null, stats.xs);
+      let maxX = Math.max.apply(null, stats.xs);
+      if (minX === maxX) {
+        minX -= 1;
+        maxX += 1;
+      }
+      let minY = Math.min.apply(null, stats.ys);
+      let maxY = Math.max.apply(null, stats.ys);
+      if (minY === maxY) {
+        minY -= 1;
+        maxY += 1;
+      }
+      const padX = (maxX - minX) * 0.05 || 1;
+      const padY = (maxY - minY) * 0.05 || 1;
+      const xMinDomain = minX - padX;
+      const xMaxDomain = maxX + padX;
+      const yMinDomain = minY - padY;
+      const yMaxDomain = maxY + padY;
+      const linePoints = [
+        [minX, stats.intercept + stats.slope * minX],
+        [maxX, stats.intercept + stats.slope * maxX]
+      ];
+      chart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'cross' }
+        },
+        grid: { left: '10%', right: '5%', top: '10%', bottom: '15%' },
+        xAxis: {
+          type: 'value',
+          name: shortX,
+          nameLocation: 'middle',
+          nameGap: 30,
+          min: xMinDomain,
+          max: xMaxDomain,
+          axisLabel: { formatter: formatScatterAxisLabel }
+        },
+        yAxis: {
+          type: 'value',
+          name: shortY,
+          nameLocation: 'middle',
+          nameGap: 35,
+          min: yMinDomain,
+          max: yMaxDomain,
+          axisLabel: { formatter: formatScatterAxisLabel }
+        },
+        series: [
+          {
+            name: 'Samples',
+            type: 'scatter',
+            symbolSize: 6,
+            itemStyle: { color: '#6366f1' },
+            data: points
+          },
+          {
+            name: 'Fitted line',
+            type: 'line',
+            smooth: false,
+            showSymbol: false,
+            lineStyle: { color: '#f97316', width: 2 },
+            data: linePoints
+          }
+        ]
+      }, true);
+    }
+
+    function updateHistoryChart(flattenData) {
+      historyDataRange = Array.isArray(flattenData) ? flattenData : [];
+      chartHistory.setOption(buildChartOption(flattenData), true);
+      const info = extractLabels(historyDataRange);
+      labelsRange = info;
+      if (info.names.length >= 2) {
+        renderPairAnalysis('range', historyDataRange, labelsRange, selectedPairRange);
+      }
+    }
+    function updateChart3_2_3_16(flattenData) {
+      historyData3216 = Array.isArray(flattenData) ? flattenData : [];
+      chart3_2_3_16.setOption(buildChartOption(flattenData), true);
+      const info = extractLabels(historyData3216);
+      labels3216 = info;
+      if (info.names.length >= 2) {
+        renderPairAnalysis('3_2_3_16', historyData3216, labels3216, selectedPair3216);
+      }
+    }
+    function updateMqttChart(flattenData) {
+      chartMqtt.setOption(buildChartOption(flattenData), true);
+    }
+    updateHistoryChart([]);
+    updateChart3_2_3_16([]);
+    updateMqttChart([]);
+    window.addEventListener('resize', function () {
+      chartHistory.resize();
+      chart3_2_3_16.resize();
+      chartMqtt.resize();
+    });
+
+    async function load3_2_3_16History() {
+      chart3_2_3_16.setOption({
+        title: { text: 'Loading...', left: 'center', top: 'center', textStyle: { color: '#64748b', fontSize: 14 } },
+        xAxis: { type: 'time', show: false },
+        yAxis: { type: 'value', show: false },
+        series: []
+      }, true);
+      try {
+        const r = await fetch(base + '/api/boxes/history/3_2_3_16');
+        const data = await parseResponse(r);
+        if (!r.ok) {
+          chart3_2_3_16.setOption({
+            title: { text: data.info || 'Load failed', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+            xAxis: { type: 'time', show: false },
+            yAxis: { type: 'value', show: false },
+            series: []
+          }, true);
+          return;
+        }
+        if (Array.isArray(data) && data.length > 0) {
+          updateChart3_2_3_16(data);
+        } else {
+          updateChart3_2_3_16([]);
+          chart3_2_3_16.setOption({ title: { text: 'No data', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } } }, true);
+        }
+      } catch (e) {
+        updateChart3_2_3_16([]);
+        chart3_2_3_16.setOption({
+          title: { text: 'Request failed: ' + e.message, left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
+          xAxis: { type: 'time', show: false },
+          yAxis: { type: 'value', show: false },
+          series: []
+        }, true);
+      }
+    }
+    // Load 2nd–16th Mar history on page load
+    load3_2_3_16History();
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+    function syncPairSelects(selectX, selectY) {
+      if (!selectX || !selectY) return;
+      const xVal = selectX.value;
+      const yVal = selectY.value;
+      // Show all options first
+      Array.prototype.forEach.call(selectX.options, function (opt) {
+        opt.hidden = false;
+      });
+      Array.prototype.forEach.call(selectY.options, function (opt) {
+        opt.hidden = false;
+      });
+      // Hide the one chosen in the other select (but keep currently selected visible)
+      Array.prototype.forEach.call(selectX.options, function (opt) {
+        if (opt.value === yVal && opt.value !== xVal) {
+          opt.hidden = true;
+        }
+      });
+      Array.prototype.forEach.call(selectY.options, function (opt) {
+        if (opt.value === xVal && opt.value !== yVal) {
+          opt.hidden = true;
+        }
+      });
+    }
+
+    function openPairPopup(target) {
+      const popup = document.getElementById('pair-popup');
+      const selectX = document.getElementById('pair-x');
+      const selectY = document.getElementById('pair-y');
+      if (!popup || !selectX || !selectY) return;
+      currentPairTarget = target;
+      const info = target === 'range' ? labelsRange : labels3216;
+      const pair = target === 'range' ? selectedPairRange : selectedPair3216;
+      selectX.innerHTML = '';
+      selectY.innerHTML = '';
+      if (!info || info.names.length < 2) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Not enough variables';
+        selectX.appendChild(opt.cloneNode(true));
+        selectY.appendChild(opt.cloneNode(true));
+      } else {
+        info.short.forEach(function (label, idx) {
+          const optX = document.createElement('option');
+          optX.value = String(idx);
+          optX.textContent = label;
+          selectX.appendChild(optX);
+          const optY = document.createElement('option');
+          optY.value = String(idx);
+          optY.textContent = label;
+          selectY.appendChild(optY.cloneNode(true));
+        });
+        const xIdx = Math.max(0, Math.min(pair.x, info.names.length - 1));
+        let yIdx = Math.max(0, Math.min(pair.y, info.names.length - 1));
+        if (yIdx === xIdx) {
+          yIdx = (xIdx + 1) % info.names.length;
+        }
+        selectX.value = String(xIdx);
+        selectY.value = String(yIdx);
+        syncPairSelects(selectX, selectY);
+        selectX.onchange = function () {
+          // If user picks the same as Y, auto-shift Y
+          if (selectX.value === selectY.value) {
+            const len = info.names.length;
+            let newY = (parseInt(selectX.value, 10) + 1) % len;
+            selectY.value = String(newY);
+          }
+          syncPairSelects(selectX, selectY);
+        };
+        selectY.onchange = function () {
+          if (selectY.value === selectX.value) {
+            const len = info.names.length;
+            let newX = (parseInt(selectY.value, 10) + 1) % len;
+            selectX.value = String(newX);
+          }
+          syncPairSelects(selectX, selectY);
+        };
+      }
+      popup.classList.remove('hidden');
+    }
+
+    function closePairPopup() {
+      const popup = document.getElementById('pair-popup');
+      if (popup) popup.classList.add('hidden');
+      currentPairTarget = null;
+    }
+
+    document.getElementById('btn-range-pair').addEventListener('click', function () {
+      openPairPopup('range');
+    });
+    document.getElementById('btn-3-2-3-16-pair').addEventListener('click', function () {
+      openPairPopup('3_2_3_16');
+    });
+    document.getElementById('pair-popup-backdrop').addEventListener('click', closePairPopup);
+    document.getElementById('pair-popup-cancel').addEventListener('click', closePairPopup);
+    document.getElementById('pair-popup-confirm').addEventListener('click', function () {
+      const selectX = document.getElementById('pair-x');
+      const selectY = document.getElementById('pair-y');
+      if (!currentPairTarget || !selectX || !selectY) {
+        closePairPopup();
+        return;
+      }
+      const x = parseInt(selectX.value, 10);
+      const y = parseInt(selectY.value, 10);
+      if (isNaN(x) || isNaN(y)) {
+        closePairPopup();
+        return;
+      }
+      if (currentPairTarget === 'range') {
+        selectedPairRange = { x: x, y: y };
+        renderPairAnalysis('range', historyDataRange, labelsRange, selectedPairRange);
+      } else {
+        selectedPair3216 = { x: x, y: y };
+        renderPairAnalysis('3_2_3_16', historyData3216, labels3216, selectedPair3216);
+      }
+      closePairPopup();
+    });
+
+    initHistoryPickers();
+    setHistoryRangeDefaults();
+    initBoxListAndPopup();
+    loadBoxIdList().then(function (ids) {
+      setHistoryRangeDefaults();
+      if (ids && ids.length === 1) {
+        if (!currentBoxId) setCurrentBox(ids[0]);
+        queryHistoryRange();
+      }
+    });
+  </script>
+</body>
+</html>

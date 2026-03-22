@@ -1,0 +1,16 @@
+{
+  "en_to_zh": {
+    "Gexin_River": "1#革新河",
+    "temperature": "温度",
+    "dissolved_oxygen": "溶解氧",
+    "ammonia_nitrogen": "氨氮",
+    "ph": "PH"
+  },
+  "zh_to_en": {
+    "1#革新河": "Gexin_River",
+    "温度": "temperature",
+    "溶解氧": "dissolved_oxygen",
+    "氨氮": "ammonia_nitrogen",
+    "PH": "ph"
+  }
+}
