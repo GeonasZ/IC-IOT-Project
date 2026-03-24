@@ -27,6 +27,20 @@
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
           <h2 class="text-lg font-semibold text-slate-800">History Range Chart</h2>
+          <label class="inline-flex items-center gap-2 text-xs text-slate-600">
+            <span>N-step smooth</span>
+            <select id="smooth-step-range" class="line-smooth-select rounded-md border border-slate-200 px-2 py-1 text-xs">
+              <option value="1">1 (off)</option>
+              <option value="3">3</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+          </label>
+          <label class="inline-flex items-center gap-1.5 text-xs text-slate-600">
+            <input id="normalize-range" type="checkbox" class="line-normalize-toggle rounded border-slate-300">
+            <span>Normalize (0-1)</span>
+          </label>
           <button type="button" id="btn-select-box" class="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-200 transition">
             Select Box
           </button>
@@ -67,11 +81,27 @@
     <section class="mb-10">
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100">
-          <h2 class="text-lg font-semibold text-slate-800">History Data for 2nd Mar – 16th Mar</h2>
+          <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-lg font-semibold text-slate-800">History Data for 2nd Mar – 16th Mar</h2>
+            <label class="inline-flex items-center gap-2 text-xs text-slate-600">
+              <span>N-step smooth</span>
+              <select id="smooth-step-3216" class="line-smooth-select rounded-md border border-slate-200 px-2 py-1 text-xs">
+                <option value="1">1 (off)</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+              </select>
+            </label>
+            <label class="inline-flex items-center gap-1.5 text-xs text-slate-600">
+              <input id="normalize-3216" type="checkbox" class="line-normalize-toggle rounded border-slate-300">
+              <span>Normalize (0-1)</span>
+            </label>
+          </div>
         </div>
         <div id="chart-3-2-3-16" class="w-full h-80"></div>
         <!-- Pairwise analysis for 2–16 Mar -->
-        <div id="analysis-result-3-2-3-16" class="px-5 py-4 border-t border-slate-100 hidden">
+        <div id="analysis-result-3-2-3-16" class="px-5 pt-4 pb-6 border-t border-slate-100 hidden">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div>
               <h3 class="text-sm font-semibold text-slate-800">Pairwise Analysis</h3>
@@ -82,16 +112,31 @@
             </button>
           </div>
           <div class="space-y-1 text-sm text-slate-700" id="analysis-text-3-2-3-16"></div>
-          <div id="scatter-3-2-3-16" class="w-full h-64 mt-4"></div>
+          <div id="scatter-3-2-3-16" class="w-full h-72 mt-4 mb-1"></div>
         </div>
       </div>
     </section>
 
-    <!-- MQTT Live chart -->
+    <!-- MQTT Live (latest values) -->
     <section class="mb-10">
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
-          <h2 class="text-lg font-semibold text-slate-800">MQTT Live Chart</h2>
+          <h2 class="text-lg font-semibold text-slate-800">MQTT Live</h2>
+          <label class="inline-flex items-center gap-2 text-xs text-slate-600">
+            <span>N-step smooth</span>
+            <select id="smooth-step-mqtt" class="line-smooth-select rounded-md border border-slate-200 px-2 py-1 text-xs">
+              <option value="1">1 (off)</option>
+              <option value="3">3</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+          </label>
+          <label class="inline-flex items-center gap-1.5 text-xs text-slate-600">
+            <input id="normalize-mqtt" type="checkbox" class="line-normalize-toggle rounded border-slate-300">
+            <span>Normalize (0-1)</span>
+          </label>
+          <span id="mqtt-status" class="text-sm text-slate-500 min-w-0 flex-1"></span>
           <button type="button" id="btn-mqtt-start" class="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition">
             Start MQTT
           </button>
@@ -99,7 +144,45 @@
             Stop MQTT
           </button>
         </div>
-        <div id="chart-mqtt" class="w-full h-80"></div>
+        <div class="px-5 pt-5 pb-2 border-b border-slate-100">
+          <div id="water-quality-box" class="rounded-xl border-2 border-slate-300 bg-slate-50 p-4 sm:p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Realtime Water Quality</p>
+                <p id="water-quality-level" class="mt-2 text-2xl sm:text-3xl font-bold text-slate-800">Waiting for realtime data</p>
+                <p id="water-quality-detail" class="mt-1 text-sm text-slate-600">NH3-N: — mg/L</p>
+              </div>
+              <button
+                type="button"
+                id="btn-water-quality-help"
+                title="How this is defined."
+                aria-label="How this is defined."
+                class="w-6 h-6 rounded-full border border-slate-300/80 bg-white/20 text-slate-500 hover:text-slate-700 hover:bg-white/40 transition flex items-center justify-center text-sm font-bold leading-none"
+              >?</button>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 min-h-[5.5rem]">
+            <p id="mqtt-label-0" class="text-xs font-medium text-slate-500 truncate" title="">—</p>
+            <p id="mqtt-value-0" class="mt-2 text-2xl font-semibold tabular-nums text-slate-900 tracking-tight">—</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 min-h-[5.5rem]">
+            <p id="mqtt-label-1" class="text-xs font-medium text-slate-500 truncate" title="">—</p>
+            <p id="mqtt-value-1" class="mt-2 text-2xl font-semibold tabular-nums text-slate-900 tracking-tight">—</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 min-h-[5.5rem]">
+            <p id="mqtt-label-2" class="text-xs font-medium text-slate-500 truncate" title="">—</p>
+            <p id="mqtt-value-2" class="mt-2 text-2xl font-semibold tabular-nums text-slate-900 tracking-tight">—</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 min-h-[5.5rem]">
+            <p id="mqtt-label-3" class="text-xs font-medium text-slate-500 truncate" title="">—</p>
+            <p id="mqtt-value-3" class="mt-2 text-2xl font-semibold tabular-nums text-slate-900 tracking-tight">—</p>
+          </div>
+        </div>
+        <div class="px-5 pb-5 pt-2 border-t border-slate-100">
+          <div id="chart-mqtt" class="w-full h-80"></div>
+        </div>
       </div>
     </section>
 
@@ -145,6 +228,67 @@
     </div>
   </div>
 
+  <!-- Water quality definition popup -->
+  <div id="water-quality-popup" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="absolute inset-0 bg-black/50" id="water-quality-popup-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full p-5 relative">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-800">Water Quality Level vs NH3-N</h3>
+            <p class="text-xs text-slate-500 mt-1">Classification rule used by the realtime water quality box.</p>
+          </div>
+          <button type="button" id="water-quality-popup-close-top" class="w-8 h-8 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50" aria-label="Close">×</button>
+        </div>
+        <div id="chart-water-quality-rule" class="w-full h-64 rounded-lg border border-slate-100"></div>
+        <div class="overflow-auto mt-4">
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr class="text-left text-slate-500 border-b border-slate-100">
+                <th class="py-2 pr-4 font-medium">Water Class</th>
+                <th class="py-2 pr-4 font-medium">NH3-N (mg/L)</th>
+                <th class="py-2 font-medium">Description</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-700">
+              <tr class="border-b border-slate-100">
+                <td class="py-2 pr-4">Class I</td>
+                <td class="py-2 pr-4">&le; 0.15</td>
+                <td class="py-2">Pristine; source of drinking water and nature reserves.</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="py-2 pr-4">Class II</td>
+                <td class="py-2 pr-4">&le; 0.5</td>
+                <td class="py-2">Clean; primary protection zones for drinking water.</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="py-2 pr-4">Class III</td>
+                <td class="py-2 pr-4">&le; 1.0</td>
+                <td class="py-2">Fair; secondary protection zones and swimming areas.</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="py-2 pr-4">Class IV</td>
+                <td class="py-2 pr-4">&le; 1.5</td>
+                <td class="py-2">Poor; industrial water supply and general recreation.</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="py-2 pr-4">Class V</td>
+                <td class="py-2 pr-4">&le; 2.0</td>
+                <td class="py-2">Very poor; agricultural use and general landscape.</td>
+              </tr>
+              <tr>
+                <td class="py-2 pr-4">&gt; Class V</td>
+                <td class="py-2 pr-4">&gt; 2.0</td>
+                <td class="py-2">Black-odorous water; essentially lacks functional use.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <button type="button" id="water-quality-popup-close" class="mt-4 w-full py-2 text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
     const base = '';
@@ -179,6 +323,9 @@
     let boxIdToGroup = {};
     let currentBoxId = null;
     let mqttPollIntervalId = null;
+    let lineSmoothStep = 1;
+    let lineNormalize = false;
+    let mqttDataLive = [];
 
     // Cached history data for analysis
     let historyDataRange = [];
@@ -277,6 +424,12 @@
       const stepMs = STEP_MINUTES * 60 * 1000;
       return Math.floor(t / stepMs) * stepMs;
     }
+    function clampSmoothStep(n) {
+      const x = parseInt(n, 10);
+      if (!isFinite(x) || x < 1) return 1;
+      if (x > 200) return 200;
+      return x;
+    }
     function getHistoryRangeInputs() {
       const startEl = document.getElementById('history-start');
       const endEl = document.getElementById('history-end');
@@ -370,6 +523,8 @@
         clearInterval(mqttPollIntervalId);
         mqttPollIntervalId = null;
       }
+      var st = document.getElementById('mqtt-status');
+      if (st) st.textContent = '';
       document.getElementById('btn-mqtt-start').classList.remove('hidden');
       document.getElementById('btn-mqtt-stop').classList.add('hidden');
     }
@@ -378,19 +533,28 @@
         alert('Please select a box first.');
         return;
       }
-      const r = await fetch(base + '/api/mqtt/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ box_id: currentBoxId })
-      });
-      const data = await parseResponse(r);
-      if (!r.ok) {
-        alert(data.info || 'MQTT subscribe failed');
+      try {
+        const r = await fetch(base + '/api/mqtt/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ box_id: currentBoxId })
+        });
+        const data = await parseResponse(r);
+        if (!r.ok) {
+          alert(data.info || 'MQTT subscribe failed');
+          return;
+        }
+      } catch (_) {
+        var statusElFail = document.getElementById('mqtt-status');
+        if (statusElFail) statusElFail.textContent = 'MQTT start failed';
+        alert('MQTT start failed. Please check backend service.');
         return;
       }
       stopMqttPoll();
       document.getElementById('btn-mqtt-start').classList.add('hidden');
       document.getElementById('btn-mqtt-stop').classList.remove('hidden');
+      var statusEl = document.getElementById('mqtt-status');
+      if (statusEl) statusEl.textContent = 'Subscribed, waiting for data...';
       chartMqtt.setOption({
         title: { text: 'MQTT Live', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
         xAxis: { type: 'time', show: false },
@@ -402,12 +566,15 @@
           .then(function (res) { return res.json(); })
           .then(function (arr) {
             if (Array.isArray(arr) && arr.length > 0) {
+              if (statusEl) statusEl.textContent = '';
+              updateMqttDisplays(arr);
               updateMqttChart(arr);
             } else {
               fetch(base + '/api/mqtt/stats?box_id=' + encodeURIComponent(currentBoxId))
                 .then(function (r) { return r.json(); })
                 .then(function (st) {
-                  var msg = (st && st.received_count === 0) ? 'No MQTT messages yet - publish to your topic' : 'No data in buffer';
+                  var msg = (st && st.received_count === 0) ? 'No MQTT messages yet, please publish data to the topic' : 'No data in buffer';
+                  if (statusEl) statusEl.textContent = msg;
                   chartMqtt.setOption({
                     title: { text: msg, left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
                     xAxis: { type: 'time', show: false },
@@ -416,6 +583,7 @@
                   }, true);
                 })
                 .catch(function () {
+                  if (statusEl) statusEl.textContent = 'No data';
                   chartMqtt.setOption({
                     title: { text: 'No data', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14 } },
                     xAxis: { type: 'time', show: false },
@@ -433,6 +601,7 @@
     async function stopMqtt() {
       stopMqttPoll();
       await fetch(base + '/api/mqtt/unsubscribe', { method: 'POST' });
+      updateMqttDisplays([]);
       updateMqttChart([]);
     }
     document.getElementById('btn-mqtt-start').addEventListener('click', startMqtt);
@@ -489,6 +658,44 @@
       }
     }
 
+    function smoothPoints(points, nStep) {
+      if (!Array.isArray(points) || points.length === 0) return [];
+      if (nStep <= 1) return points.slice();
+      const out = [];
+      const q = [];
+      let sum = 0;
+      for (let i = 0; i < points.length; i++) {
+        const t = points[i][0];
+        const v = points[i][1];
+        q.push(v);
+        sum += v;
+        if (q.length > nStep) {
+          sum -= q.shift();
+        }
+        out.push([t, sum / q.length]);
+      }
+      return out;
+    }
+
+    function normalizePoints(points) {
+      if (!Array.isArray(points) || points.length === 0) return [];
+      let minV = Infinity;
+      let maxV = -Infinity;
+      points.forEach(function (p) {
+        const v = p[1];
+        if (v < minV) minV = v;
+        if (v > maxV) maxV = v;
+      });
+      if (!isFinite(minV) || !isFinite(maxV)) return points.slice();
+      if (Math.abs(maxV - minV) < 1e-12) {
+        return points.map(function (p) { return [p[0], 0.5]; });
+      }
+      const d = maxV - minV;
+      return points.map(function (p) {
+        return [p[0], (p[1] - minV) / d];
+      });
+    }
+
     function buildChartOption(flattenData) {
       if (!flattenData || !flattenData.length) {
         return {
@@ -518,7 +725,10 @@
       if (maxT === -Infinity) maxT = null;
       const series = Object.keys(byName).map(function (name) {
         var legendName = name.indexOf('>') >= 0 ? name.split('>').pop() : (name.indexOf('/') >= 0 ? name.split('/').pop() : name);
-        return { name: legendName, type: 'line', smooth: true, data: byName[name] };
+        const sorted = byName[name].slice().sort(function (a, b) { return a[0] - b[0]; });
+        const smoothed = smoothPoints(sorted, lineSmoothStep);
+        const finalPoints = lineNormalize ? normalizePoints(smoothed) : smoothed;
+        return { name: legendName, type: 'line', smooth: false, data: finalPoints };
       });
       return {
         tooltip: { trigger: 'axis' },
@@ -530,7 +740,9 @@
           min: minT != null ? minT : undefined,
           max: maxT != null ? maxT : undefined
         },
-        yAxis: { type: 'value', scale: true },
+        yAxis: lineNormalize
+          ? { type: 'value', min: 0, max: 1, axisLabel: { formatter: function (v) { return Number(v).toFixed(2); } } }
+          : { type: 'value', scale: true },
         dataZoom: [
           { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseMove: true }
         ],
@@ -542,6 +754,7 @@
     const chartMqtt = echarts.init(document.getElementById('chart-mqtt'));
     let chartScatterRange = null;
     let chartScatter3216 = null;
+    let chartWaterQualityRule = null;
 
     function getShortName(name) {
       if (!name) return 'unknown';
@@ -550,7 +763,196 @@
       return name;
     }
 
-    /** 数值轴刻度经除法易产生 1.7449999999999999 等浮点尾数，压缩有效数字再输出。 */
+    function formatMqttNumber(num) {
+      if (!isFinite(num)) return '—';
+      if (Math.abs(num - Math.round(num)) < 1e-9) return String(Math.round(num));
+      var s = num.toFixed(4);
+      return s.replace(/\.?0+$/, '');
+    }
+
+    function getWaterQualityByNh3(nh3Value) {
+      if (!isFinite(nh3Value)) {
+        return {
+          level: 'Waiting for realtime data',
+          detail: 'NH3-N: — mg/L',
+          boxClass: 'rounded-xl border-2 border-slate-300 bg-slate-50 p-4 sm:p-5',
+          levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-slate-800'
+        };
+      }
+      if (nh3Value <= 0.15) {
+        return {
+          level: 'Class I (Excellent)',
+          detail: 'NH3-N: ' + formatMqttNumber(nh3Value) + ' mg/L (<= 0.15)',
+          boxClass: 'rounded-xl border-2 border-emerald-400 bg-emerald-50 p-4 sm:p-5',
+          levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-emerald-700'
+        };
+      }
+      if (nh3Value <= 0.5) {
+        return {
+          level: 'Class II (Good)',
+          detail: 'NH3-N: ' + formatMqttNumber(nh3Value) + ' mg/L (<= 0.5)',
+          boxClass: 'rounded-xl border-2 border-lime-400 bg-lime-50 p-4 sm:p-5',
+          levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-lime-700'
+        };
+      }
+      if (nh3Value <= 1.0) {
+        return {
+          level: 'Class III (Fair)',
+          detail: 'NH3-N: ' + formatMqttNumber(nh3Value) + ' mg/L (<= 1.0)',
+          boxClass: 'rounded-xl border-2 border-amber-400 bg-amber-50 p-4 sm:p-5',
+          levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-amber-700'
+        };
+      }
+      if (nh3Value <= 1.5) {
+        return {
+          level: 'Class IV (Poor)',
+          detail: 'NH3-N: ' + formatMqttNumber(nh3Value) + ' mg/L (<= 1.5)',
+          boxClass: 'rounded-xl border-2 border-orange-400 bg-orange-50 p-4 sm:p-5',
+          levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-orange-700'
+        };
+      }
+      if (nh3Value <= 2.0) {
+        return {
+          level: 'Class V (Very Poor)',
+          detail: 'NH3-N: ' + formatMqttNumber(nh3Value) + ' mg/L (<= 2.0)',
+          boxClass: 'rounded-xl border-2 border-rose-400 bg-rose-50 p-4 sm:p-5',
+          levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-rose-700'
+        };
+      }
+      return {
+        level: '> Class V (Black-odorous)',
+        detail: 'NH3-N: ' + formatMqttNumber(nh3Value) + ' mg/L (> 2.0)',
+        boxClass: 'rounded-xl border-2 border-slate-700 bg-slate-100 p-4 sm:p-5',
+        levelClass: 'mt-2 text-2xl sm:text-3xl font-bold text-slate-800'
+      };
+    }
+
+    function getLatestNh3Value(flattenData) {
+      if (!Array.isArray(flattenData) || !flattenData.length) return null;
+      var latest = null;
+      flattenData.forEach(function (item) {
+        var name = String(item && item.name ? item.name : '');
+        if (!/(nh3|ammonia)/i.test(name)) return;
+        var t = item.time;
+        var numT = (typeof t === 'number' && !isNaN(t)) ? t : Number(t);
+        var numV = (typeof item.value === 'number' && !isNaN(item.value)) ? item.value : Number(item.value);
+        if (!isFinite(numT) || !isFinite(numV)) return;
+        if (!latest || numT > latest.time) latest = { time: numT, value: numV };
+      });
+      if (!latest) return null;
+      // Treat stale points as no realtime data.
+      if ((Date.now() - latest.time) > 15000) return null;
+      return latest.value;
+    }
+
+    function updateWaterQualityDisplay(flattenData) {
+      var box = document.getElementById('water-quality-box');
+      var levelEl = document.getElementById('water-quality-level');
+      var detailEl = document.getElementById('water-quality-detail');
+      if (!box || !levelEl || !detailEl) return;
+      var nh3Value = getLatestNh3Value(flattenData);
+      var info = getWaterQualityByNh3(nh3Value);
+      box.className = info.boxClass;
+      levelEl.className = info.levelClass;
+      levelEl.textContent = info.level;
+      detailEl.textContent = info.detail;
+    }
+
+    function getWaterRuleChartOption() {
+      return {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: '5%', right: '4%', top: '10%', bottom: '12%', containLabel: true },
+        xAxis: {
+          type: 'value',
+          name: 'NH3-N (mg/L)',
+          min: 0,
+          max: 2.4
+        },
+        yAxis: {
+          type: 'category',
+          data: ['>Class V', 'Class V', 'Class IV', 'Class III', 'Class II', 'Class I']
+        },
+        series: [
+          {
+            type: 'bar',
+            // Use absolute threshold values so bar lengths match the labels exactly.
+            data: [2.4, 2.0, 1.5, 1.0, 0.5, 0.15],
+            barWidth: 18,
+            itemStyle: {
+              color: function (params) {
+                var colors = ['#334155', '#fb7185', '#fb923c', '#fbbf24', '#84cc16', '#34d399'];
+                return colors[params.dataIndex];
+              }
+            },
+            label: {
+              show: true,
+              position: 'right',
+              formatter: function (params) {
+                var labels = ['> 2.0', '<= 2.0', '<= 1.5', '<= 1.0', '<= 0.5', '<= 0.15'];
+                return labels[params.dataIndex];
+              },
+              color: '#334155'
+            }
+          }
+        ]
+      };
+    }
+
+    function openWaterQualityPopup() {
+      var popup = document.getElementById('water-quality-popup');
+      var chartDom = document.getElementById('chart-water-quality-rule');
+      if (!popup || !chartDom) return;
+      popup.classList.remove('hidden');
+      if (!chartWaterQualityRule) chartWaterQualityRule = echarts.init(chartDom);
+      chartWaterQualityRule.setOption(getWaterRuleChartOption(), true);
+      chartWaterQualityRule.resize();
+    }
+
+    function closeWaterQualityPopup() {
+      var popup = document.getElementById('water-quality-popup');
+      if (popup) popup.classList.add('hidden');
+    }
+
+    function updateMqttDisplays(flattenData) {
+      for (var i = 0; i < 4; i++) {
+        var le = document.getElementById('mqtt-label-' + i);
+        var ve = document.getElementById('mqtt-value-' + i);
+        if (le) {
+          le.textContent = '—';
+          le.title = '';
+        }
+        if (ve) ve.textContent = '—';
+      }
+      if (!flattenData || !flattenData.length) {
+        updateWaterQualityDisplay([]);
+        return;
+      }
+      var latestByName = {};
+      flattenData.forEach(function (item) {
+        var n = item.name || 'unknown';
+        var t = item.time;
+        var v = item.value;
+        var numV = (typeof v === 'number' && !isNaN(v)) ? v : Number(v);
+        if (isNaN(numV) || t == null || isNaN(t)) return;
+        if (!latestByName[n] || t > latestByName[n].time) {
+          latestByName[n] = { time: t, value: numV, name: n };
+        }
+      });
+      var names = Object.keys(latestByName).sort();
+      for (var j = 0; j < 4 && j < names.length; j++) {
+        var full = names[j];
+        var le2 = document.getElementById('mqtt-label-' + j);
+        var ve2 = document.getElementById('mqtt-value-' + j);
+        if (le2) {
+          le2.textContent = getShortName(full);
+          le2.title = full;
+        }
+        if (ve2) ve2.textContent = formatMqttNumber(latestByName[full].value);
+      }
+      updateWaterQualityDisplay(flattenData);
+    }
+
+    /** Convert floating point number to string with 12 significant digits. */
     function formatScatterAxisLabel(value) {
       var v = Number(value);
       if (!isFinite(v)) return '';
@@ -776,15 +1178,48 @@
       }
     }
     function updateMqttChart(flattenData) {
-      chartMqtt.setOption(buildChartOption(flattenData), true);
+      mqttDataLive = Array.isArray(flattenData) ? flattenData : [];
+      chartMqtt.setOption(buildChartOption(mqttDataLive), true);
+    }
+
+    function setAllSmoothSelects(value) {
+      const selects = document.querySelectorAll('.line-smooth-select');
+      selects.forEach(function (el) {
+        el.value = String(value);
+      });
+    }
+
+    function setAllNormalizeToggles(checked) {
+      const toggles = document.querySelectorAll('.line-normalize-toggle');
+      toggles.forEach(function (el) {
+        el.checked = !!checked;
+      });
+    }
+
+    function applyLineSmoothStep(rawValue) {
+      lineSmoothStep = clampSmoothStep(rawValue);
+      setAllSmoothSelects(lineSmoothStep);
+      updateHistoryChart(historyDataRange);
+      updateChart3_2_3_16(historyData3216);
+      updateMqttChart(mqttDataLive);
+    }
+
+    function applyLineNormalize(rawValue) {
+      lineNormalize = !!rawValue;
+      setAllNormalizeToggles(lineNormalize);
+      updateHistoryChart(historyDataRange);
+      updateChart3_2_3_16(historyData3216);
+      updateMqttChart(mqttDataLive);
     }
     updateHistoryChart([]);
     updateChart3_2_3_16([]);
+    updateMqttDisplays([]);
     updateMqttChart([]);
     window.addEventListener('resize', function () {
       chartHistory.resize();
       chart3_2_3_16.resize();
       chartMqtt.resize();
+      if (chartWaterQualityRule) chartWaterQualityRule.resize();
     });
 
     async function load3_2_3_16History() {
@@ -947,15 +1382,33 @@
       closePairPopup();
     });
 
+    document.getElementById('btn-water-quality-help').addEventListener('click', openWaterQualityPopup);
+    document.getElementById('water-quality-popup-backdrop').addEventListener('click', closeWaterQualityPopup);
+    document.getElementById('water-quality-popup-close').addEventListener('click', closeWaterQualityPopup);
+    document.getElementById('water-quality-popup-close-top').addEventListener('click', closeWaterQualityPopup);
+    document.querySelectorAll('.line-smooth-select').forEach(function (el) {
+      el.addEventListener('change', function () {
+        applyLineSmoothStep(el.value);
+      });
+    });
+    document.querySelectorAll('.line-normalize-toggle').forEach(function (el) {
+      el.addEventListener('change', function () {
+        applyLineNormalize(el.checked);
+      });
+    });
+    applyLineSmoothStep(1);
+    applyLineNormalize(false);
+
     initHistoryPickers();
     setHistoryRangeDefaults();
     initBoxListAndPopup();
     loadBoxIdList().then(function (ids) {
       setHistoryRangeDefaults();
+      if (ids && ids.length > 0 && !currentBoxId) setCurrentBox(ids[0]);
       if (ids && ids.length === 1) {
-        if (!currentBoxId) setCurrentBox(ids[0]);
         queryHistoryRange();
       }
+      if (currentBoxId) startMqtt();
     });
   </script>
 </body>

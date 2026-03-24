@@ -1,4 +1,4 @@
-# Fetch history from 2026-03-02 to 2026-03-16 and write to 3.2_3.16history.csv with English headers
+# Fetch history from 2026-03-02 to 2026-03-16 and write to 3.2_3.16history.csv
 
 import sys
 import csv

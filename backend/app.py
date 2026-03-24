@@ -332,19 +332,19 @@ def api_boxes_history_3_2_3_16():
     return jsonify(flat)
 
 
-# ---------- 数据分析 API：Pearson 相关系数、协方差矩阵等 ----------
+# ---------- Data analysis API: Pearson correlation coefficient, covariance matrix, etc. ----------
 
 
 @app.route("/api/analysis/run", methods=["POST"])
 def api_analysis_run():
     """
-    对历史数据做相关性分析（Pearson、协方差，可选 Spearman）。
-    body 三选一：
-      1) { "data": [ { "name", "time", "value" }, ... ] }  直接传入扁平数据
-      2) { "source": "3_2_3_16" }  使用 3.2_3.16history.csv 数据
-      3) { "box_no", "begin", "end" }  按时间范围从 FBox 拉取历史后分析
-    可选: "include_spearman": true
-    返回: { "labels", "labels_short", "pearson", "covariance", "count", "spearman"? }
+    Do correlation analysis on the history data (Pearson, covariance, optional Spearman).
+    body one of the following:
+      1) { "data": [ { "name", "time", "value" }, ... ] }  directly pass in flat data
+      2) { "source": "3_2_3_16" }  use 3.2_3.16history.csv data
+      3) { "box_no", "begin", "end" }  fetch history from FBox by time range and analyze
+    Optional: "include_spearman": true
+    Return: { "labels", "labels_short", "pearson", "covariance", "count", "spearman"? }
     """
     data = request.get_json() or {}
     flat = None
@@ -385,7 +385,7 @@ def api_analysis_run():
     include_spearman = data.get("include_spearman", False)
     out = analysis_module.run_analysis(flat, include_spearman=include_spearman)
     if out is None:
-        return jsonify({"info": "数据不足或无法按时间对齐（至少 2 个时间点且各序列均有值）"}), 400
+        return jsonify({"info": "not enough data or cannot align by time (at least 2 time points and all series have values)"}), 400
     return jsonify(out)
 
 
