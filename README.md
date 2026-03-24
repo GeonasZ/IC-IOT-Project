@@ -13,7 +13,6 @@ Project/
 ├── config.json              # Local FBox / MQTT / server config (do not commit)
 ├── 3.2_3.16history.csv      # Sample history for the fixed-range chart API
 ├── get_history.py           # Helper script to pull history (optional)
-├── main.py                  # Placeholder, not in used
 ├── backend/
 │   ├── app.py               # Flask routes: FBox, MQTT, history chart, analysis
 │   ├── config_loader.py     # Load config, data points, etc

@@ -1,0 +1,39 @@
+{
+  "fbox": {
+    "address": "https://openapi.fbox360.com",
+    "client_id": "bb2f3ced49d048e59d7b628afb18243e",
+    "client_secret": "9532803d972646feb05dc65c7361b8a5",
+    "login_mode": "client_credentials",
+    "box_id": ["301525111298"],
+    "data_points": {
+      "301525111298": {
+        "group": "Gexin_River",
+        "points": {
+          "temperature": "367582778924996246",
+          "dissolved_oxygen": "367582778924996242",
+          "ammonia_nitrogen": "367582778924996244",
+          "ph": "367582778923947664"
+        }
+      }
+    }
+  },
+  "mqtt": {
+    "301525111298":{
+      "broker": "101.227.40.126",
+      "broker_port": 51883,
+      "client_id":"ZhiyangGao",
+      "sub_topic": "301525111298/ZhiyangGao/Gexin/",
+      "username": "user",
+      "password": "Gac_2025"
+    }
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5000
+  },
+  "user": {
+    "name": "Geonas",
+    "password": "test"
+  }
+}
+
