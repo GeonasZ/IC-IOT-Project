@@ -38,9 +38,9 @@ Project/
   ```bash
    pip install -r requirements.txt
   ```
-1. **Start server**
+2. **Start server**
   ```bash
    python entrance.py
   ```
-2. Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in a browser for the frontend.
+3. Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in a browser for the frontend.
 

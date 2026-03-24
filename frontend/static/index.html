@@ -975,6 +975,57 @@
       };
     }
 
+    /** Average ranks (1-based), ties get mean rank. */
+    function averageRanks(values) {
+      const n = values.length;
+      const idx = values.map(function (v, i) { return { v: v, i: i }; });
+      idx.sort(function (a, b) { return a.v - b.v; });
+      const rank = new Array(n);
+      let j = 0;
+      while (j < n) {
+        let k = j;
+        while (k + 1 < n && idx[k + 1].v === idx[j].v) k++;
+        const avg = (j + k + 2) / 2;
+        for (let t = j; t <= k; t++) rank[idx[t].i] = avg;
+        j = k + 1;
+      }
+      return rank;
+    }
+    function pearsonOnVectors(a, b) {
+      const n = a.length;
+      if (n < 2) return NaN;
+      let sx = 0;
+      let sy = 0;
+      for (let i = 0; i < n; i++) {
+        sx += a[i];
+        sy += b[i];
+      }
+      const mx = sx / n;
+      const my = sy / n;
+      let sxx = 0;
+      let syy = 0;
+      let sxy = 0;
+      for (let i = 0; i < n; i++) {
+        const dx = a[i] - mx;
+        const dy = b[i] - my;
+        sxx += dx * dx;
+        syy += dy * dy;
+        sxy += dx * dy;
+      }
+      const denom = n - 1;
+      const varX = denom > 0 ? sxx / denom : 0;
+      const varY = denom > 0 ? syy / denom : 0;
+      if (varX <= 0 || varY <= 0) return 0;
+      return (sxy / denom) / Math.sqrt(varX * varY);
+    }
+    /** Spearman rho = Pearson of ranks (matches scipy.stats.spearmanr for bivariate). */
+    function spearmanRho(xs, ys) {
+      if (!xs || !ys || xs.length !== ys.length || xs.length < 2) return NaN;
+      const rx = averageRanks(xs);
+      const ry = averageRanks(ys);
+      return pearsonOnVectors(rx, ry);
+    }
+
     function computePairStats(flattenData, nameX, nameY) {
       if (!flattenData || !flattenData.length) return null;
       const mapX = {};
@@ -1022,6 +1073,7 @@
       const r = (varX > 0 && varY > 0) ? (cov / Math.sqrt(varX * varY)) : 0;
       const slope = varX > 0 ? (cov / varX) : 0;
       const intercept = meanY - slope * meanX;
+      const spearman = spearmanRho(xs, ys);
       return {
         count: n,
         xs: xs,
@@ -1030,6 +1082,7 @@
         meanY: meanY,
         cov: cov,
         r: r,
+        spearman: spearman,
         slope: slope,
         intercept: intercept
       };
@@ -1072,10 +1125,12 @@
       }
       resultEl.classList.remove('hidden');
       countEl.textContent = 'Aligned points used: ' + stats.count + ' (X: ' + shortX + ', Y: ' + shortY + ')';
+      const spearmanStr = isFinite(stats.spearman) ? stats.spearman.toFixed(4) : '—';
       textEl.innerHTML = [
         '<div class="space-y-2.5">',
         '  <div class="flex flex-wrap gap-x-5 gap-y-1">',
         '    <span>Pearson <span class="text-slate-500 font-mono">r</span>: <span class="font-mono tabular-nums">' + stats.r.toFixed(4) + '</span></span>',
+        '    <span>Spearman <span class="text-slate-500 font-mono">rho</span>: <span class="font-mono tabular-nums">' + spearmanStr + '</span></span>',
         '    <span>Covariance: <span class="font-mono tabular-nums">' + stats.cov.toFixed(4) + '</span></span>',
         '  </div>',
         '  <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 border-t border-slate-100 pt-2.5">',

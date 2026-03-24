@@ -3,7 +3,7 @@
 
 import numpy as np
 from collections import defaultdict
-
+from scipy import stats
 
 def _short_name(name: str) -> str:
     """Shorten the name for display."""
@@ -82,10 +82,6 @@ def spearman_correlation(matrix: np.ndarray) -> np.ndarray | None:
     matrix: (n_series, n_times)
     Return the Spearman rank correlation coefficient matrix of (n_series, n_series); if scipy is not available, return None.
     """
-    try:
-        from scipy import stats
-    except ImportError:
-        return None
     n = matrix.shape[0]
     out = np.eye(n)
     for i in range(n):
