@@ -1,12 +1,12 @@
-# 数据分析：Pearson 相关系数、协方差矩阵等
-# 输入为扁平化历史数据 [{ name, time, value }, ...]，按时间对齐后计算
+# Data analysis: Pearson correlation coefficient, covariance matrix, etc.
+# Input is a flat list of history data [{ name, time, value }, ...], aligned by time.
 
 import numpy as np
 from collections import defaultdict
 
 
 def _short_name(name: str) -> str:
-    """取可读的短名称，用于表格显示。"""
+    """Shorten the name for display."""
     if ">" in name:
         return name.split(">")[-1]
     if "/" in name:
@@ -16,14 +16,14 @@ def _short_name(name: str) -> str:
 
 def flat_to_aligned_matrix(flat: list) -> tuple[list[str], np.ndarray] | None:
     """
-    将扁平列表按时间对齐为矩阵。
+    Align the flat list by time to a matrix.
     flat: [{ "name": str, "time": int, "value": float }, ...]
-    返回: (labels, matrix)，matrix 形状 (n_series, n_times)，仅保留所有序列都有值的时间点。
-    若数据不足则返回 None。
+    Return: (labels, matrix), matrix shape (n_series, n_times), only keep the time points that all series have values.
+    If the data is not enough, return None.
     """
     if not flat:
         return None
-    # 按名称分组 -> name -> [(time, value), ...]
+    # Group by name -> name -> [(time, value), ...]
     by_name = defaultdict(list)
     for item in flat:
         n = item.get("name") or "unknown"
@@ -42,17 +42,17 @@ def flat_to_aligned_matrix(flat: list) -> tuple[list[str], np.ndarray] | None:
     if not by_name:
         return None
     labels = sorted(by_name.keys())
-    # 每个时间点若在所有序列中都存在，则保留
+    # Keep the time points that exist in all series
     time_to_idx = {}
     for name in labels:
         for t, _ in by_name[name]:
             time_to_idx[t] = time_to_idx.get(t, 0) + 1
     n_series = len(labels)
-    # 只保留“所有序列都有该时间点”的时间（即出现次数 == n_series）
+    # Only keep the time points that exist in all series (count == n_series)
     common_times = sorted([t for t, count in time_to_idx.items() if count == n_series])
     if len(common_times) < 2:
         return None
-    # 每个序列按 common_times 取值
+    # For each series, take the values at common_times
     name_to_vals = {}
     for name in labels:
         t2v = dict(by_name[name])
@@ -64,7 +64,7 @@ def flat_to_aligned_matrix(flat: list) -> tuple[list[str], np.ndarray] | None:
 def pearson_correlation(matrix: np.ndarray) -> np.ndarray:
     """
     matrix: (n_series, n_times)
-    返回 (n_series, n_series) 的 Pearson 相关系数矩阵。
+    Return the Pearson correlation coefficient matrix of (n_series, n_series).
     """
     return np.corrcoef(matrix)
 
@@ -72,7 +72,7 @@ def pearson_correlation(matrix: np.ndarray) -> np.ndarray:
 def covariance_matrix(matrix: np.ndarray) -> np.ndarray:
     """
     matrix: (n_series, n_times)
-    返回 (n_series, n_series) 的协方差矩阵。numpy 默认每行是一个变量。
+    Return the covariance matrix of (n_series, n_series). numpy defaults to each row being a variable.
     """
     return np.cov(matrix)
 
@@ -80,7 +80,7 @@ def covariance_matrix(matrix: np.ndarray) -> np.ndarray:
 def spearman_correlation(matrix: np.ndarray) -> np.ndarray | None:
     """
     matrix: (n_series, n_times)
-    返回 (n_series, n_series) 的 Spearman 秩相关系数矩阵；若无 scipy 则返回 None。
+    Return the Spearman rank correlation coefficient matrix of (n_series, n_series); if scipy is not available, return None.
     """
     try:
         from scipy import stats
@@ -98,16 +98,15 @@ def spearman_correlation(matrix: np.ndarray) -> np.ndarray | None:
 
 def run_analysis(flat: list, include_spearman: bool = False) -> dict | None:
     """
-    对扁平历史数据做相关性/协方差分析。
-    返回: {
-        "labels": ["name1", "name2", ...],
-        "labels_short": ["short1", ...],
-        "pearson": [[...], ...],
-        "covariance": [[...], ...],
-        "spearman": [[...], ...]  # 仅当 include_spearman 且 scipy 可用
-        "count": int  # 用于计算的时间点数量
-    }
-    若数据不足返回 None。
+    Do correlation/covariance analysis on the flat history data.
+    Return: {
+        "labels": ["name1", "name2", ...], # The original names
+        "labels_short": ["short1", ...], # The short names
+        "pearson": [[...], ...], # The Pearson correlation coefficient matrix
+        "covariance": [[...], ...], # The covariance matrix
+        "spearman": [[...], ...]  # Only when include_spearman and scipy is available
+        "count": int  # The number of time points used for calculation
+    }, If the data is not enough, return None.
     """
     aligned = flat_to_aligned_matrix(flat)
     if aligned is None:
